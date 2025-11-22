@@ -5,18 +5,17 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+  deploy-preview:
     environment:
       name: Preview-pr-${{ github.event.number }}
-      url: /test
-
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-
+      url: ${{ steps.deploy.outputs.page_url }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,4 +37,5 @@ jobs:
           path: ./dist
 
       - name: Deploy to Preview
+        id: deploy
         uses: actions/deploy-pages@v4
