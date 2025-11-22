@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Preview-pr-${{ github.event.number }}
+      url: /test
 
     permissions:
       contents: read
