@@ -14,7 +14,7 @@ jobs:
   deploy-preview:
     environment:
       name: Preview-pr-${{ github.event.number }}
-      url: ${{ steps.deploy.outputs.page_url }}test
+      url: ${{ steps.deploy.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
