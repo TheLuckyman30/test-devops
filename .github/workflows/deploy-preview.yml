@@ -1,4 +1,4 @@
-name: Preview deployment
+name: Preview Deployment
 
 on:
   pull_request:
@@ -12,30 +12,47 @@ permissions:
 
 jobs:
   deploy-preview:
-    environment:
-      name: Preview-pr-${{ github.event.number }}
-      url: ${{ steps.deploy.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # 1️⃣ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      - name: Build project
-        run: npm run build
+      # 4️⃣ Build Vite app
+      - name: Build app
+        run: |
+          # Set PREVIEW=true so Vite base is /previews/ for GitHub Pages
+          echo "PREVIEW=true" >> $GITHUB_ENV
+          npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
+      # 5️⃣ Clone gh-pages-preview branch
+      - name: Setup preview branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git clone --branch gh-pages-preview https://github.com/${{ github.repository }} preview
+          rm -rf preview/previews/pr-${{ github.event.number }} || true
 
-      - name: Deploy to Preview
-        id: deploy
-        uses: actions/deploy-pages@v4
+      # 6️⃣ Copy new build into preview folder
+      - name: Copy build
+        run: |
+          mkdir -p preview/previews/pr-${{ github.event.number }}
+          cp -r dist/* preview/previews/pr-${{ github.event.number }}/
+
+      # 7️⃣ Commit & push preview
+      - name: Commit & push
+        run: |
+          cd preview
+          git add .
+          git commit -m "Deploy PR #${{ github.event.number }} preview" || echo "No changes to commit"
+          git push origin gh-pages-preview
