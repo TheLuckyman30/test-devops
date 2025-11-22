@@ -40,7 +40,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git clone --branch gh-pages-preview https://github.com/${{ github.repository }} preview
+          git clone --branch gh-pages https://github.com/${{ github.repository }} preview
           rm -rf preview/previews/pr-${{ github.event.number }} || true
 
       # 6️⃣ Copy new build into preview folder
@@ -55,4 +55,4 @@ jobs:
           cd preview
           git add .
           git commit -m "Deploy PR #${{ github.event.number }} preview" || echo "No changes to commit"
-          git push origin gh-pages-preview
+          git push origin gh-pages
