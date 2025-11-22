@@ -23,6 +23,9 @@ jobs:
 
       - name: Install and Build
         if: github.event.action != 'closed' # You might want to skip the build if the PR has been closed
+        env:
+          BASE_TYPE: 1
+          PR_NUMBER: ${{ github.event.number }}
         run: |
           npm ci
           npm run build
