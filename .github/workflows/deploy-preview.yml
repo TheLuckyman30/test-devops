@@ -55,4 +55,7 @@ jobs:
           cd preview
           git add .
           git commit -m "Deploy PR #${{ github.event.number }} preview" || echo "No changes to commit"
-          git push origin gh-pages
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+          git push origin gh-pages-preview
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
