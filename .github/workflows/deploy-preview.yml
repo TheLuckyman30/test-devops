@@ -16,6 +16,9 @@ on:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    environment:
+      name: Preview-${{ github.event.number }}
+      url: https://theluckyman30.github.io/test-devops/pr-preview/pr-${{ github.event.number }}
     steps:
       - uses: actions/checkout@v4
       - run: npm i && npm run build
