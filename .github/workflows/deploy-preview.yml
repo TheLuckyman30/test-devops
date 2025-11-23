@@ -1,5 +1,5 @@
 # .github/workflows/preview.yml
-name: Deploy PR previews
+name: Deploy PR Previews
 concurrency: preview-${{ github.ref }}
 
 permissions:
@@ -16,7 +16,7 @@ on:
       - closed
     branches: [main]
 jobs:
-  deploy-preview:
+  Deploy-Preview:
     runs-on: ubuntu-latest
     environment:
       name: Preview

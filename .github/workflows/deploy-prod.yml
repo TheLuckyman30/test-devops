@@ -1,5 +1,5 @@
 # .github/workflows/deploy.yml
-name: Deploy
+name: Deploy Production
 on:
   push:
     branches:
@@ -10,17 +10,22 @@ permissions:
   pull-requests: write
 
 jobs:
-  deploy:
+  Deploy-Production:
     runs-on: ubuntu-latest
     environment:
       name: Production
       url: https://theluckyman30.github.io/test-devops/
     steps:
-      - uses: actions/checkout@v4
-      - run: npm i && npm run build
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install & Build
+        run: npm ci && npm run build
         env:
           BASE_TYPE: 0
-      - uses: JamesIves/github-pages-deploy-action@v4
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: ./dist
           branch: gh-pages
