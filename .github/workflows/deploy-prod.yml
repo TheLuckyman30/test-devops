@@ -12,6 +12,9 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://theluckyman30.github.io/test-devops/
     steps:
       - uses: actions/checkout@v4
       - run: npm i && npm run build
