@@ -23,7 +23,6 @@ jobs:
       url: https://theluckyman30.github.io/test-devops/pr-preview/pr-${{ github.event.number }}
     steps:
       - name: Checkout
-        if: github.event.action != 'closed'
         uses: actions/checkout@v4
 
       - name: Install & Build
@@ -34,7 +33,6 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
 
       - name: Deploy
-        if: github.event.action != 'closed'
         uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: ./dist
@@ -42,19 +40,29 @@ jobs:
           umbrella-dir: pr-preview
           action: auto
 
-      - name: Delete Deployments for this PR
+      - name: Delete deployments for this PR
         if: github.event.action == 'closed'
         run: |
-          echo "Deleting deployments for PR ${{ github.event.number }} inside environment 'Preview'"
+          ENV_NAME="Preview"
+          PR_NUMBER="${{ github.event.number }}"
+          REPO="${{ github.repository }}"
 
-          # Get all deployments for this environment
-          DEPLOYMENTS=$(gh api repos/${{ github.repository }}/deployments \
-            --jq "[.[] | select(.environment == \"Preview\")]")
+          echo "Deleting deployments for PR $PR_NUMBER in environment $ENV_NAME"
 
-          # Filter deployments by PR number in payload/URL
-          for ID in $(echo "$DEPLOYMENTS" | jq -r "map(select(.payload.pull_request.number == ${{ github.event.number }})) | .[].id"); do
+          # 1. Get all deployments in the environment
+          DEPLOYMENTS_JSON=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+                                  -H "Accept: application/vnd.github+json" \
+                                  https://api.github.com/repos/$REPO/deployments)
+
+          # 2. Filter deployments by environment and PR number
+          DEPLOYMENT_IDS=$(echo "$DEPLOYMENTS_JSON" | jq -r ".[] | select(.environment==\"$ENV_NAME\" and .payload.pull_request.number==$PR_NUMBER) | .id")
+
+          # 3. Delete each deployment
+          for ID in $DEPLOYMENT_IDS; do
             echo "Deleting deployment $ID"
-            gh api repos/${{ github.repository }}/deployments/$ID -X DELETE
+            curl -s -X DELETE -H "Authorization: Bearer $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/$REPO/deployments/$ID
           done
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
