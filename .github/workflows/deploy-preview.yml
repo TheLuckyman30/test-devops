@@ -1,5 +1,5 @@
 # .github/workflows/preview.yml
-name: Deploy PR previews
+name: Deploy PR Previews
 concurrency: preview-${{ github.ref }}
 
 permissions:
@@ -14,37 +14,47 @@ on:
       - reopened
       - synchronize
       - closed
+    branches: [main]
 jobs:
-  deploy-preview:
+  Deploy-Preview:
     runs-on: ubuntu-latest
     environment:
-      name: Preview-${{ github.event.number }}
+      name: Preview
       url: https://theluckyman30.github.io/test-devops/pr-preview/pr-${{ github.event.number }}
     steps:
-      - uses: actions/checkout@v4
-      - run: npm i && npm run build
+      - name: Checkout
+        if: github.event.action != 'closed'
+        uses: actions/checkout@v4
+
+      - name: Install & Build
+        if: github.event.action != 'closed'
+        run: npm ci && npm run build
         env:
           BASE_TYPE: 1
           PR_NUMBER: ${{ github.event.number }}
+
+      - name: Deploy
         if: github.event.action != 'closed'
-      - uses: rossjrw/pr-preview-action@v1
+        uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: ./dist
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: auto
-      - name: Delete environment for this PR
+
+      - name: Delete Deployments for this PR
         if: github.event.action == 'closed'
         run: |
-          ENV_NAME="pr-preview-${{ github.event.number }}"
-          echo "Deleting environment: $ENV_NAME"
+          echo "Deleting deployments for PR ${{ github.event.number }} inside environment 'Preview'"
 
-          # Call the GitHub API to delete the environment
-          curl -L \
-            -X DELETE \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${{ github.repository }}/environments/$ENV_NAME
+          # Get all deployments for this environment
+          DEPLOYMENTS=$(gh api repos/${{ github.repository }}/deployments \
+            --jq "[.[] | select(.environment == \"Preview\")]")
+
+          # Filter deployments by PR number in payload/URL
+          for ID in $(echo "$DEPLOYMENTS" | jq -r "map(select(.payload.pull_request.number == ${{ github.event.number }})) | .[].id"); do
+            echo "Deleting deployment $ID"
+            gh api repos/${{ github.repository }}/deployments/$ID -X DELETE
+          done
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
